@@ -1,7 +1,7 @@
 # PayControl Deployment Guide
 
 **Domain:** `paycontrol.swiftwaveholding.com`  
-**Framework:** Node.js + Express + MongoDB  
+**Framework:** Node.js + Express + PostgreSQL  
 **Server:** Nginx (reverse proxy)
 
 ---
@@ -9,85 +9,25 @@
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [GitHub App Registration](#github-app-registration)
-3. [Environment Configuration](#environment-configuration)
-4. [MongoDB Setup](#mongodb-setup)
-5. [Node.js Application Setup](#nodejs-application-setup)
-6. [Nginx Configuration](#nginx-configuration)
-7. [SSL/TLS Setup](#ssltls-setup)
-8. [Testing](#testing)
-9. [Production Checklist](#production-checklist)
-10. [Troubleshooting](#troubleshooting)
+2. [Environment Configuration](#environment-configuration)
+3. [PostgreSQL Setup](#postgresql-setup)
+4. [Node.js Application Setup](#nodejs-application-setup)
+5. [Nginx Configuration](#nginx-configuration)
+6. [SSL/TLS Setup](#ssltls-setup)
+7. [Testing](#testing)
+8. [Production Checklist](#production-checklist)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Prerequisites
 
 - **Node.js:** v18+ installed
-- **MongoDB:** Running locally or cloud (Atlas)
+- **PostgreSQL:** v12+ running locally, on Neon, or cloud (AWS RDS, DigitalOcean, etc.)
 - **Nginx:** Installed and configured for reverse proxy
 - **OpenSSL:** For generating secrets and key pair
 - **PM2 or systemd:** For process management
 - **Domain:** `paycontrol.swiftwaveholding.com` (DNS configured)
-
----
-
-## GitHub App Registration
-
-### Step 1: Create GitHub App
-
-1. Navigate to: https://github.com/settings/apps/new
-2. Fill in the form:
-
-```
-GitHub App name:          PayControl
-Description:              GitHub App access control and webhook management
-Homepage URL:             https://paycontrol.swiftwaveholding.com
-Webhook Active:           ✓ Check
-Webhook URL:              https://paycontrol.swiftwaveholding.com/webhook
-Webhook Secret:           [Generate via openssl rand -hex 32]
-Authorization callback:   https://paycontrol.swiftwaveholding.com/oauth/callback
-```
-
-### Step 2: Configure Permissions
-
-**Repository Permissions:**
-- ✓ Contents → Read
-- ✓ Metadata → Read  
-- ✓ Members → Read
-- ✓ Pull Requests → Write
-- ✓ Issues → Read & Write
-
-**Organization Permissions:**
-- ✓ Members → Read
-
-**User Permissions:**
-- ✓ Email addresses → Read
-
-### Step 3: Subscribe to Events
-
-```
-✓ Installation
-✓ Installation repositories
-✓ Push
-✓ Pull request
-✓ Repository
-✓ Ping
-```
-
-### Step 4: Generate and Save Credentials
-
-After saving, collect:
-
-- **Client ID** → Copy to `GITHUB_CLIENT_ID` in `.env`
-- **Client Secret** → Copy to `GITHUB_CLIENT_SECRET` in `.env`
-- **App ID** (top of settings) → Copy to `GITHUB_APP_ID` in `.env`
-
-Go to **Private keys** section:
-- Click "Generate a private key"
-- Download the `.pem` file
-- Open with text editor and copy content
-- Format for `.env`: Replace newlines with literal `\n`
 
 ---
 
@@ -98,6 +38,399 @@ Go to **Private keys** section:
 ```bash
 # JWT Secret
 openssl rand -hex 32
+
+# JWT Refresh Secret  
+openssl rand -hex 32
+
+# Webhook Secret (for Stripe/Plaid)
+openssl rand -hex 32
+```
+
+### Create .env File
+
+Copy `.env.example` to `.env` and fill in all required values:
+
+```bash
+cd backend
+cp .env.example .env
+# Edit .env with real secrets (NEVER commit this file)
+```
+
+**Critical Environment Variables:**
+```
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgresql://user:password@host:5432/paycontrol
+JWT_SECRET=<generated-secret>
+JWT_REFRESH_SECRET=<generated-secret>
+FRONTEND_URL=https://paycontrol.swiftwaveholding.com
+PLAID_CLIENT_ID=<from-plaid-dashboard>
+PLAID_SECRET=<from-plaid-dashboard>
+STRIPE_SECRET_KEY=sk_live_<your-key>
+STRIPE_WEBHOOK_SECRET=whsec_<your-secret>
+```
+
+---
+
+## PostgreSQL Setup
+
+### Option 1: Using Neon (Recommended for Cloud)
+
+1. Create account at https://neon.tech
+2. Create a project and database
+3. Copy connection string to `DATABASE_URL` in `.env`
+4. Connection string format: `postgresql://user:password@host:5432/dbname?sslmode=require`
+
+### Option 2: Local PostgreSQL
+
+```bash
+# Install PostgreSQL
+sudo apt-get install postgresql postgresql-contrib  # Ubuntu/Debian
+brew install postgresql  # macOS
+
+# Start service
+sudo systemctl start postgresql  # Ubuntu/Debian
+brew services start postgresql  # macOS
+
+# Create database and user
+sudo -u postgres psql
+CREATE DATABASE paycontrol;
+CREATE USER paycontrol_user WITH PASSWORD 'secure_password_here';
+GRANT ALL PRIVILEGES ON DATABASE paycontrol TO paycontrol_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO paycontrol_user;
+\q
+```
+
+### Initialize Database Schema
+
+```bash
+# Navigate to project root
+cd /path/to/paycontrol
+
+# Run schema setup script
+bash scripts/setup-database.sh
+
+# Or manually:
+psql $DATABASE_URL -f database/schema.sql
+
+# Optional: Seed demo data
+psql $DATABASE_URL -f database/seeders/demoData.sql
+```
+
+---
+
+## Node.js Application Setup
+
+```bash
+# Install backend dependencies
+cd backend
+npm install
+
+# Test the connection
+node -e "require('dotenv').config(); const db = require('./config/db'); db.query('SELECT NOW()').then(r => console.log('DB Connected:', r.rows[0]))"
+
+# Start server (test)
+npm start
+
+# Should see: "Server running on port 3000"
+```
+
+### Production Process Manager
+
+#### Using PM2 (Recommended)
+
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Create ecosystem file: ecosystem.config.js
+cat > ecosystem.config.js << 'EOF'
+module.exports = {
+  apps: [
+    {
+      name: 'paycontrol-backend',
+      script: './backend/server.js',
+      instances: 'max',
+      exec_mode: 'cluster',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000
+      },
+      error_file: './logs/pm2-error.log',
+      out_file: './logs/pm2-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      autorestart: true,
+      max_memory_restart: '1G',
+      watch: false
+    }
+  ]
+};
+EOF
+
+# Create logs directory
+mkdir -p logs
+
+# Start with PM2
+pm2 start ecosystem.config.js
+
+# Save PM2 process list
+pm2 save
+
+# Auto-start on system reboot
+pm2 startup systemd -u $USER --hp /home/$USER
+```
+
+#### Using Systemd
+
+Create `/etc/systemd/system/paycontrol.service`:
+
+```ini
+[Unit]
+Description=PayControl Backend
+After=network.target
+
+[Service]
+Type=simple
+User=paycontrol
+WorkingDirectory=/opt/paycontrol
+EnvironmentFile=/opt/paycontrol/.env
+ExecStart=/usr/bin/node /opt/paycontrol/backend/server.js
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable paycontrol
+sudo systemctl start paycontrol
+sudo systemctl status paycontrol
+```
+
+---
+
+## Nginx Configuration
+
+Create `/etc/nginx/sites-available/paycontrol`:
+
+```nginx
+upstream paycontrol_backend {
+    server 127.0.0.1:3000;
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name paycontrol.swiftwaveholding.com;
+    return 301 https://$server_name$request_uri;
+}
+
+# Main HTTPS server
+server {
+    listen 443 ssl http2;
+    server_name paycontrol.swiftwaveholding.com;
+
+    # SSL Certificates (see SSL/TLS Setup section)
+    ssl_certificate /etc/letsencrypt/live/paycontrol.swiftwaveholding.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/paycontrol.swiftwaveholding.com/privkey.pem;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Logging
+    access_log /var/log/nginx/paycontrol_access.log combined;
+    error_log /var/log/nginx/paycontrol_error.log warn;
+
+    # Compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript;
+    gzip_min_length 1000;
+
+    # Frontend (static files)
+    location / {
+        root /opt/paycontrol/frontend;
+        try_files $uri $uri/ /index.html;
+        
+        # Cache control for static assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 30d;
+            add_header Cache-Control "public, immutable";
+        }
+    }
+
+    # API proxy
+    location /api/ {
+        proxy_pass http://paycontrol_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Health check endpoint
+    location /health {
+        proxy_pass http://paycontrol_backend;
+        access_log off;
+    }
+}
+```
+
+Enable the configuration:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/paycontrol /etc/nginx/sites-enabled/
+sudo nginx -t  # Test configuration
+sudo systemctl restart nginx
+```
+
+---
+
+## SSL/TLS Setup
+
+### Using Let's Encrypt (Free & Automated)
+
+```bash
+# Install Certbot
+sudo apt-get install certbot python3-certbot-nginx  # Ubuntu/Debian
+brew install certbot  # macOS
+
+# Generate certificate
+sudo certbot certonly --nginx -d paycontrol.swiftwaveholding.com
+
+# Auto-renewal (runs daily)
+sudo systemctl enable certbot.timer
+sudo systemctl start certbot.timer
+
+# Test renewal
+sudo certbot renew --dry-run
+```
+
+### Manual Certificate (Self-signed for testing only)
+
+```bash
+openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365
+```
+
+---
+
+## Testing
+
+### Health Check
+
+```bash
+curl https://paycontrol.swiftwaveholding.com/api/health
+# Should return: {"status":"OK","timestamp":"2024-01-01T12:00:00.000Z"}
+```
+
+### Database Connection Test
+
+```bash
+psql $DATABASE_URL -c "SELECT NOW();"
+```
+
+### Login Test
+
+```bash
+curl -X POST https://paycontrol.swiftwaveholding.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password"}'
+```
+
+---
+
+## Production Checklist
+
+- [ ] All secrets generated and in `.env` (not in repo)
+- [ ] Database created and schema initialized
+- [ ] PostgreSQL backup strategy configured
+- [ ] Node.js process manager configured (PM2 or systemd)
+- [ ] Nginx reverse proxy configured
+- [ ] SSL certificate installed and auto-renewal working
+- [ ] Security headers configured in Nginx
+- [ ] Firewall rules configured (port 443, 80 open)
+- [ ] Logs directory created with proper permissions
+- [ ] Error tracking (Sentry) configured
+- [ ] Monitoring/alerting configured
+- [ ] Database connection pooling tested
+- [ ] Rate limiting tested
+- [ ] CORS origins verified
+- [ ] All API endpoints tested
+- [ ] Frontend served correctly
+- [ ] Backup and recovery procedure tested
+- [ ] Load testing completed
+- [ ] Security audit passed (npm audit)
+- [ ] Documentation updated
+- [ ] Deployment runbook created
+
+---
+
+## Troubleshooting
+
+### Server won't start
+
+```bash
+# Check if port 3000 is in use
+lsof -i :3000
+
+# Check environment variables
+echo $DATABASE_URL
+echo $JWT_SECRET
+
+# Check logs
+pm2 logs paycontrol-backend
+# or
+tail -f /var/log/syslog | grep paycontrol
+```
+
+### Database connection errors
+
+```bash
+# Test connection string
+psql "postgresql://user:password@host:5432/dbname?sslmode=require"
+
+# Check if database exists
+psql -c "\l"
+
+# Check user permissions
+psql -c "\du"
+```
+
+### Nginx 502 Bad Gateway
+
+```bash
+# Check backend is running
+ps aux | grep node
+
+# Check backend logs
+pm2 logs
+
+# Verify upstream address in nginx config
+curl http://127.0.0.1:3000/api/health
+```
+
+### SSL Certificate Issues
+
+```bash
+# Check certificate validity
+openssl s_client -connect paycontrol.swiftwaveholding.com:443
+
+# View certificate details
+sudo openssl x509 -in /etc/letsencrypt/live/paycontrol.swiftwaveholding.com/fullchain.pem -text -noout
+```
 # Output: a7f9e2d4c6b1f3h5j7k9m2n4p6q8r0s2t4u6v8w0x2y4z6a8b0c2d4e6f8g0h2
 
 # Session Secret

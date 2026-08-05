@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PayControl Dashboard</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="stylesheet" href="styles/components.css" />
+  <link rel="stylesheet" href="styles/charts.css" />
+  <link rel="stylesheet" href="styles/responsive.css" />
+</head>
+<body data-page="overview">
+  <header class="app-header">
+    <div class="brand">
+      <h1>PayControl</h1>
+      <p>Financial operations for businesses</p>
+    </div>
+    <nav class="app-nav">
+      <a href="index.html" class="nav-link">Overview</a>
+      <a href="crypto.html" class="nav-link">Crypto</a>
+      <a href="banks.html" class="nav-link">Banks</a>
+      <a href="gateways.html" class="nav-link">Gateways</a>
+      <a href="allocation.html" class="nav-link">Allocation</a>
+      <a href="transactions.html" class="nav-link">Transactions</a>
+      <button id="logoutButton" class="btn btn-secondary">Log out</button>
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <section class="hero-card">
+      <h2>Welcome back</h2>
+      <p>Track revenue, payouts, wallets, and allocation in one place.</p>
+    </section>
+
+    <section id="dashboardContent" class="dashboard-grid">
+      <div class="card"> <h3>Balance</h3> <p id="balanceValue">Loading...</p> </div>
+      <div class="card"> <h3>Active gateways</h3> <p id="gatewayCount">Loading...</p> </div>
+      <div class="card"> <h3>Crypto wallets</h3> <p id="walletCount">Loading...</p> </div>
+      <div class="card"> <h3>Recent revenue</h3> <p id="revenueChange">Loading...</p> </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>© 2026 PayControl. All rights reserved.</p>
+  </footer>
+
+  <script src="scripts/api.js"></script>
+  <script src="scripts/auth.js"></script>
+  <script src="scripts/state.js"></script>
+  <script src="scripts/utils.js"></script>
+  <script src="scripts/pages/overview.js"></script>
+  <script src="scripts/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+:root {
+  --bg: #0f172a;
+  --surface: #111827;
+  --surface-strong: #1f2937;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --success: #4ade80;
+  --danger: #fb7185;
+  --radius: 18px;
+  font-family: 'Sora', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 40%),
+    linear-gradient(180deg, #020617 0%, #090e1f 100%);
+  color: var(--text);
+}
+
+img {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 2vw, 2.5rem);
+}
+
+.brand p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.page-shell,
+.content-shell,
+.login-shell {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+.hero-card,
+.card,
+.login-card,
+.document-page main {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.footer,
+.app-footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--muted);
+}

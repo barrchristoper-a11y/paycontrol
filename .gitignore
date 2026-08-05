@@ -1,0 +1,72 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production build
+dist/
+build/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temp files
+tmp/
+temp/
+
+# Certificates
+*.crt
+*.cer
+*.csr
+*.key
+*.pem
+
+# Secrets
+.env.production
+.env.staging
+.env.development
+
+# Database backups
+*.sql.bak
+*.dump
+postgres_backup/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+dist/
+.turbo/
