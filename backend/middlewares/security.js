@@ -25,6 +25,10 @@ const apiLimiter = rateLimit({
     message: 'Too many requests, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => {
+        // Use the remote IP address; requires `app.set('trust proxy', ...)` in server.js
+        return req.ip;
+    },
 });
 
 // Input validation for login

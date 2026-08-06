@@ -41,6 +41,12 @@ const transactionRoutes = require('./routes/transactions');
 
 const app = express();
 
+// ✅ FIX: Trust proxy headers (for Render/Vercel/Cloudflare)
+app.set('trust proxy', 2);  // Trust first 2 proxies (e.g., Render + Cloudflare)
+
+// Rest of your middleware...
+app.use(helmet());
+
 // Security
 setSecurityHeaders(app);
 app.use(helmet());
@@ -111,7 +117,7 @@ const server = app.listen(PORT, () => {
 // ========================================
 const gracefulShutdown = (signal) => {
     console.log(`\n📍 ${signal} received. Starting graceful shutdown...`);
-    
+
     server.close(() => {
         console.log('✅ Server closed');
         process.exit(0);
