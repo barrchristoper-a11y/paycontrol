@@ -54,7 +54,7 @@ async function apiFetch(endpoint, options = {}) {
   if (response.status === 401) {
     // Token expired or invalid, redirect to login
     sessionStorage.removeItem('user');
-    window.location.href = '/login';
+    window.location.href = '/login.html';
     return null;
   }
 
