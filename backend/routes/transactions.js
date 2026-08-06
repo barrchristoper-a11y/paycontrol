@@ -22,26 +22,14 @@ router.get('/', authenticate, async (req, res) => {
             params.push(type);
         }
         if (gateway) {
-            query += ` AND gateway = $${paramIndex++}`;
-            params.push(gateway);
-        }
-
-        query += ` ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
-        params.push(limit, offset);
-
-        const { rows } = await db.query(query, params);
-        res.json(rows);
-    } catch (error) {
-        logger.error(`Failed to fetch transactions: ${error.message}`);
-        res.status(500).json({ error: 'Failed to fetch transactions.' });
-    }
-});
-
-// Get transaction by ID
-router.get('/:id', authenticate, async (req, res) => {
-    const { id } = req.params;
-    try {
-        const { rows } = await db.query(
+      const gatewayList = gateway.split(',').map(g => g.trim()).filter(Boolean);
+      if (gatewayList.length > 1) {
+        query += ` AND gateway = ANY($${paramIndex++})`;
+        params.push(gatewayList);
+      } else {
+        query += ` AND gateway = $${paramIndex++}`;
+        params.push(gatewayList[0]);
+      }
             `SELECT * FROM transactions WHERE id = $1 AND user_id = $2`,
             [id, req.user.id]
         );

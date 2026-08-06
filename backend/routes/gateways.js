@@ -40,11 +40,10 @@ router.patch('/:id/enable', authenticate, async (req, res) => {
 });
 
 // Stripe webhook
-router.post('/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    try {
-        handleStripeWebhook(sig, req.body);
-        res.status(200).send('Webhook received');
+router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  try {
+    await handleStripeWebhook(sig, req.body);
     } catch (error) {
         logger.error(`Stripe webhook error: ${error.message}`);
         res.status(400).send(`Webhook Error: ${error.message}`);

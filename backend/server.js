@@ -40,6 +40,13 @@ const allocationRoutes = require('./routes/allocation');
 const transactionRoutes = require('./routes/transactions');
 
 const app = express();
+app.get("/", (req, res) => {
+    res.json({
+        service: "PayControl API",
+        status: "running",
+        version: "1.0.0"
+    });
+});
 
 // ✅ FIX: Trust proxy headers (for Render/Vercel/Cloudflare)
 app.set('trust proxy', 2);  // Trust first 2 proxies (e.g., Render + Cloudflare)

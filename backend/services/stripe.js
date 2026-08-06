@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
+const db = require('../config/db');
 async function createCustomer(email, name) {
     return await stripe.customers.create({
         email,
