@@ -6,3 +6,5 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     autoDeploy: true
+    env:
+      FRONTEND_URL: https://paycontrol-ivory.vercel.app/
