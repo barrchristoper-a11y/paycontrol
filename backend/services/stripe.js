@@ -1,3 +1,4 @@
+const db = require('../config/db');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 async function createCustomer(email, name) {
@@ -26,7 +27,7 @@ async function handleStripeWebhook(sig, payload) {
     );
 
     switch (event.type) {
-        case 'payment_intent.succeeded':
+        case 'payment_intent.succeeded': {
             const paymentIntent = event.data.object;
             await db.query(
                 `INSERT INTO transactions 
@@ -45,7 +46,8 @@ async function handleStripeWebhook(sig, payload) {
                 ]
             );
             break;
-        case 'payment_intent.payment_failed':
+        }
+        case 'payment_intent.payment_failed': {
             const paymentIntent = event.data.object;
             await db.query(
                 `INSERT INTO transactions 
@@ -64,6 +66,7 @@ async function handleStripeWebhook(sig, payload) {
                 ]
             );
             break;
+        }
         default:
             console.log(`Unhandled event type: ${event.type}`);
     }

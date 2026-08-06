@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const { hashPassword, comparePassword, generateToken, generateRefreshToken } = require('../services/auth');
 const { validateLogin } = require('../middlewares/security');
+const { authenticate } = require('../middlewares/auth');
 const logger = require('../logger');
 
 // Login
