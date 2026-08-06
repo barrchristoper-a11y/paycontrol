@@ -29,17 +29,29 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
+
 const { setSecurityHeaders, apiLimiter } = require('./middlewares/security');
 const { errorHandler } = require('./middlewares/error');
 const { csrfProtection } = require('./middlewares/csrf');
+
 const authRoutes = require('./routes/auth');
 const cryptoRoutes = require('./routes/crypto');
 const bankRoutes = require('./routes/banks');
 const gatewayRoutes = require('./routes/gateways');
 const allocationRoutes = require('./routes/allocation');
 const transactionRoutes = require('./routes/transactions');
+const overviewRoutes = require('./routes/overview');
 
 const app = express();
+
+// ========================================
+// Trust proxy headers (Render/Vercel/Cloudflare)
+// ========================================
+app.set('trust proxy', 2);
+
+// ========================================
+// Root status endpoint
+// ========================================
 app.get("/", (req, res) => {
     res.json({
         service: "PayControl API",
@@ -48,79 +60,109 @@ app.get("/", (req, res) => {
     });
 });
 
-// ✅ FIX: Trust proxy headers (for Render/Vercel/Cloudflare)
-app.set('trust proxy', 2);  // Trust first 2 proxies (e.g., Render + Cloudflare)
-
-// Rest of your middleware...
-app.use(helmet());
-
-// Security
+// ========================================
+// Security Middleware
+// ========================================
 setSecurityHeaders(app);
 app.use(helmet());
 
 // ========================================
-// HTTPS Enforcement (redirect HTTP to HTTPS in production)
+// HTTPS Enforcement
 // ========================================
 if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
-        // When behind reverse proxy (Vercel, Render, Cloudflare), check x-forwarded-proto
         if (req.header('x-forwarded-proto') !== 'https') {
-            return res.redirect(301, `https://${req.header('host')}${req.originalUrl}`);
+            return res.redirect(
+                301,
+                `https://${req.header('host')}${req.originalUrl}`
+            );
         }
         next();
     });
 
-    // Add HSTS header (tell browsers to always use HTTPS)
     app.use((req, res, next) => {
-        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+        res.setHeader(
+            'Strict-Transport-Security',
+            'max-age=31536000; includeSubDomains; preload'
+        );
         next();
     });
 }
 
+// ========================================
+// CORS
+// ========================================
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
 }));
+
+// ========================================
+// Core Middleware
+// ========================================
 app.use(apiLimiter);
 app.use(compression());
 app.use(cookieParser());
-app.use(csrfProtection);
 
-// Logging
-app.use(morgan('combined'));
-
-// Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// ========================================
+// Logging
+// ========================================
+app.use(morgan('combined'));
+
+// ========================================
+// CSRF Protection
+// ========================================
+app.use(csrfProtection);
+
+// ========================================
+// API Routes
+// ========================================
 app.use('/api/auth', authRoutes);
 app.use('/api/crypto', cryptoRoutes);
 app.use('/api/banks', bankRoutes);
 app.use('/api/gateways', gatewayRoutes);
 app.use('/api/allocation', allocationRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/overview', overviewRoutes);
 
-// Health check
+// ========================================
+// Health Check
+// ========================================
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString()
+    });
 });
 
-// 404 handler
+// ========================================
+// 404 Handler
+// ========================================
 app.use((req, res) => {
-    res.status(404).json({ error: 'Not Found' });
+    res.status(404).json({
+        error: 'Not Found'
+    });
 });
 
-// Error handler
+// ========================================
+// Global Error Handler
+// ========================================
 app.use(errorHandler);
 
+// ========================================
+// Server Start
+// ========================================
 const PORT = process.env.PORT || 3000;
+
 const server = app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
 });
 
 // ========================================
-// Graceful Shutdown Handlers
+// Graceful Shutdown
 // ========================================
 const gracefulShutdown = (signal) => {
     console.log(`\n📍 ${signal} received. Starting graceful shutdown...`);
@@ -130,7 +172,6 @@ const gracefulShutdown = (signal) => {
         process.exit(0);
     });
 
-    // Force shutdown after 10 seconds
     setTimeout(() => {
         console.error('❌ Forced shutdown: Graceful shutdown timeout');
         process.exit(1);
