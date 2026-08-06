@@ -7,4 +7,4 @@ services:
     startCommand: node server.js
     autoDeploy: true
     env:
-      FRONTEND_URL: https://paycontrol-ivory.vercel.app/
+      FRONTEND_URL: https://paycontrol-ivory.vercel.app

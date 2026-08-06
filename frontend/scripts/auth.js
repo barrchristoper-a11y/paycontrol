@@ -46,7 +46,7 @@ async function logout() {
 async function checkAuth() {
   try {
     // Try to fetch user info from protected endpoint
-    const response = await fetch('/api/auth/me', {
+    const response = await fetch(`${API_URL}/auth/me`, {
       credentials: 'include'  // Include cookies
     });
 
@@ -91,4 +91,27 @@ function updateSidebarUser() {
 $(document).ready(function () {
   checkAuth();
   updateSidebarUser();
+
+  if ($('#logoutButton').length) {
+    $('#logoutButton').on('click', async function () {
+      await logout();
+    });
+  }
+
+  if ($('#loginForm').length) {
+    $('#loginForm').on('submit', async function (e) {
+      e.preventDefault();
+      const email = $('#email').val().trim();
+      const password = $('#password').val().trim();
+      try {
+        await login(email, password);
+      } catch (error) {
+        if (typeof toast === 'function') {
+          toast(error.message, 'error');
+        } else {
+          alert(error.message);
+        }
+      }
+    });
+  }
 });

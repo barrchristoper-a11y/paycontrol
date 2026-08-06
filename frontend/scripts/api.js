@@ -5,7 +5,8 @@ const API_URL = isLocalhost
   : 'https://paycontrol-backend.onrender.com/api'; // Render backend URL
 
 // Sentry for error tracking
-if (process.env.NODE_ENV === 'production') {
+const isBrowserProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+if (isBrowserProduction) {
   import('https://browser.sentry-cdn.com/7.0.0/bundle.min.js').then(Sentry => {
     Sentry.init({ dsn: 'YOUR_SENTRY_DSN' });
   });

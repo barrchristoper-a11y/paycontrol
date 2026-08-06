@@ -53,19 +53,17 @@ router.post('/login', validateLogin, async (req, res) => {
         res.cookie('accessToken', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
             path: '/',
-            domain: process.env.FRONTEND_URL ? new URL(process.env.FRONTEND_URL).hostname : undefined
         });
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             path: '/',
-            domain: process.env.FRONTEND_URL ? new URL(process.env.FRONTEND_URL).hostname : undefined
         });
 
         res.json({ success: true, user: userData });
@@ -117,19 +115,17 @@ router.post('/refresh', async (req, res) => {
         res.cookie('accessToken', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             maxAge: 24 * 60 * 60 * 1000,
             path: '/',
-            domain: process.env.FRONTEND_URL ? new URL(process.env.FRONTEND_URL).hostname : undefined
         });
 
         res.cookie('refreshToken', newRefreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             maxAge: 7 * 24 * 60 * 60 * 1000,
             path: '/',
-            domain: process.env.FRONTEND_URL ? new URL(process.env.FRONTEND_URL).hostname : undefined
         });
 
         res.json({ success: true });
@@ -143,8 +139,8 @@ router.post('/refresh', async (req, res) => {
 router.post('/logout', async (req, res) => {
     try {
         // Clear cookies
-        res.clearCookie('accessToken', { path: '/' });
-        res.clearCookie('refreshToken', { path: '/' });
+        res.clearCookie('accessToken', { path: '/', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', secure: process.env.NODE_ENV === 'production' });
+        res.clearCookie('refreshToken', { path: '/', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', secure: process.env.NODE_ENV === 'production' });
 
         res.json({ success: true });
     } catch (error) {

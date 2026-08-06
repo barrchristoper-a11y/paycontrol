@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+<script src="https://browser.sentry-cdn.com/7.0.0/bundle.min.js" crossorigin="anonymous"></script>
+<script>
+  Sentry.init({ dsn: 'https://fc54230c5a76b03038c7ece8b51da049@o4511850116284416.ingest.us.sentry.io/4511861086158853' });
+</script>
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,34 +14,173 @@
   <link rel="stylesheet" href="styles/charts.css" />
   <link rel="stylesheet" href="styles/responsive.css" />
 </head>
+<script defer data-domain="https://paycontrol-ivory.vercel.app" src="https://plausible.io/js/script.js"></script>
+
 <body data-page="overview">
+  <div id="toast-box"></div>
+  <div id="overlay" class="overlay"></div>
+
   <header class="app-header">
     <div class="brand">
-      <h1>PayControl</h1>
-      <p>Financial operations for businesses</p>
+      <img src="images/logo.png" alt="PayControl logo" class="brand-logo" />
+      <div>
+        <h1>PayControl</h1>
+        <p>Financial operations for businesses</p>
+      </div>
+    </div>
+    <div class="topbar">
+      <div id="tb-title">Overview</div>
+      <div id="tb-date">Loading date...</div>
     </div>
     <nav class="app-nav">
-      <a href="index.html" class="nav-link">Overview</a>
-      <a href="crypto.html" class="nav-link">Crypto</a>
-      <a href="banks.html" class="nav-link">Banks</a>
-      <a href="gateways.html" class="nav-link">Gateways</a>
-      <a href="allocation.html" class="nav-link">Allocation</a>
-      <a href="transactions.html" class="nav-link">Transactions</a>
+      <button type="button" class="nav-link sb-btn active" data-page="overview">Overview</button>
+      <button type="button" class="nav-link sb-btn" data-page="crypto">Crypto</button>
+      <button type="button" class="nav-link sb-btn" data-page="banks">Banks</button>
+      <button type="button" class="nav-link sb-btn" data-page="gateways">Gateways</button>
+      <button type="button" class="nav-link sb-btn" data-page="allocation">Allocation</button>
+      <button type="button" class="nav-link sb-btn" data-page="transactions">Transactions</button>
       <button id="logoutButton" class="btn btn-secondary">Log out</button>
     </nav>
   </header>
 
   <main class="page-shell">
-    <section class="hero-card">
-      <h2>Welcome back</h2>
-      <p>Track revenue, payouts, wallets, and allocation in one place.</p>
+    <section class="page active" id="page-overview">
+      <div class="hero-card">
+        <h2>Welcome back</h2>
+        <p>Track revenue, payouts, wallets, and allocation in one place.</p>
+      </div>
+      <section class="overview-grid">
+        <div class="card overview-card">
+          <h3>Total Portfolio</h3>
+          <p id="sb-total">Loading...</p>
+        </div>
+        <div class="card overview-card">
+          <h3>Balance</h3>
+          <p id="balanceValue">Loading...</p>
+        </div>
+        <div class="card overview-card">
+          <h3>Active gateways</h3>
+          <p id="gatewayCount">Loading...</p>
+        </div>
+        <div class="card overview-card">
+          <h3>Crypto wallets</h3>
+          <p id="walletCount">Loading...</p>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Overview metrics</h3>
+        <div id="kpi-grid" class="kpi-grid"></div>
+      </section>
+      <section class="card">
+        <div class="page-row">
+          <div class="page-block">
+            <h3>Portfolio Breakdown</h3>
+            <div id="portfolio-bars"></div>
+          </div>
+          <div class="page-block">
+            <h3>Current Allocation</h3>
+            <div id="alloc-legend"></div>
+            <svg id="alloc-donut" class="donut-chart"></svg>
+          </div>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Recent Transactions</h3>
+        <div id="overview-tx-table"></div>
+      </section>
     </section>
 
-    <section id="dashboardContent" class="dashboard-grid">
-      <div class="card"> <h3>Balance</h3> <p id="balanceValue">Loading...</p> </div>
-      <div class="card"> <h3>Active gateways</h3> <p id="gatewayCount">Loading...</p> </div>
-      <div class="card"> <h3>Crypto wallets</h3> <p id="walletCount">Loading...</p> </div>
-      <div class="card"> <h3>Recent revenue</h3> <p id="revenueChange">Loading...</p> </div>
+    <section class="page" id="page-crypto">
+      <div class="hero-card">
+        <h2>Crypto Wallets</h2>
+        <p>Manage your digital assets and view wallet details.</p>
+      </div>
+      <div class="card stats-card">
+        <h3>Total Crypto Value</h3>
+        <p id="crypto-total">Loading...</p>
+      </div>
+      <section class="card">
+        <div id="crypto-cards" class="cards-grid"></div>
+      </section>
+      <section class="card" id="crypto-detail" style="display:none;">
+        <h3 id="crypto-detail-title">Wallet Detail</h3>
+        <div id="crypto-detail-body"></div>
+      </section>
+    </section>
+
+    <section class="page" id="page-banks">
+      <div class="hero-card">
+        <h2>Bank Accounts</h2>
+        <p>View linked accounts and transaction history.</p>
+      </div>
+      <div class="card stats-card">
+        <h3>Total Bank Balance</h3>
+        <p id="bank-total">Loading...</p>
+      </div>
+      <section class="card" id="bank-cards"></section>
+      <section class="card">
+        <h3>Bank Transactions</h3>
+        <div id="bank-tx-table"></div>
+      </section>
+    </section>
+
+    <section class="page" id="page-gateways">
+      <div class="hero-card">
+        <h2>Payment Gateways</h2>
+        <p>Monitor gateway status, volume, and integration settings.</p>
+      </div>
+      <div class="card stats-card">
+        <h3>Monthly Gateway Volume</h3>
+        <p id="gw-total">Loading...</p>
+      </div>
+      <section class="card" id="gw-cards"></section>
+      <section class="card">
+        <h3>Gateway Volume Chart</h3>
+        <div id="gw-vol-chart"></div>
+      </section>
+    </section>
+
+    <section class="page" id="page-allocation">
+      <div class="hero-card">
+        <h2>Allocation Rules</h2>
+        <p>Manage how profits and funds are distributed.</p>
+      </div>
+      <section class="card">
+        <div id="alloc-warn" class="warn-box hide"><strong>Warning:</strong> <span id="alloc-warn-text"></span></div>
+        <div class="page-row">
+          <div style="flex:1">
+            <div id="alloc-rules-list"></div>
+          </div>
+          <div style="min-width:300px;max-width:360px">
+            <div class="card panel-card">
+              <h4>Allocation Summary</h4>
+              <div class="panel-row"><span>Total</span><span id="alloc-total-pct">0%</span></div>
+              <div id="alloc-legend2"></div>
+            </div>
+            <svg id="alloc-donut2" class="donut-chart"></svg>
+          </div>
+        </div>
+        <div class="card panel-card">
+          <h4>Last run breakdown</h4>
+          <div id="last-run-items"></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="page" id="page-transactions">
+      <div class="hero-card">
+        <h2>Transactions</h2>
+        <p>Filter, search, and review your recent activity.</p>
+      </div>
+      <section class="card filters-card">
+        <div id="tx-filters" class="chip-row"></div>
+        <div class="search-box">
+          <input id="tx-search" type="search" placeholder="Search transactions..." />
+        </div>
+      </section>
+      <section class="card">
+        <div id="tx-table"></div>
+      </section>
     </section>
   </main>
 
@@ -44,11 +188,18 @@
     <p>© 2026 PayControl. All rights reserved.</p>
   </footer>
 
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-3gJwYp4GjhA4/OdGQOQF3K3/Qz4aVh+8QPp3c1i0qLc=" crossorigin="anonymous"></script>
   <script src="scripts/api.js"></script>
   <script src="scripts/auth.js"></script>
   <script src="scripts/state.js"></script>
   <script src="scripts/utils.js"></script>
   <script src="scripts/pages/overview.js"></script>
+  <script src="scripts/pages/crypto.js"></script>
+  <script src="scripts/pages/banks.js"></script>
+  <script src="scripts/pages/gateways.js"></script>
+  <script src="scripts/pages/allocation.js"></script>
+  <script src="scripts/pages/transactions.js"></script>
   <script src="scripts/main.js"></script>
 </body>
+
 </html>
