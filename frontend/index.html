@@ -1,53 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>PayControl Dashboard</title>
-
-  <!-- Sentry Error Monitoring -->
-  <script src="https://browser.sentry-cdn.com/7.120.3/bundle.min.js" crossorigin="anonymous"></script>
-  <script>
-    Sentry.init({
-      dsn: "https://fc54230c5a76b03038c7ece8b51da049@o4511850116284416.ingest.us.sentry.io/4511861086158853",
-      tracesSampleRate: 1.0,
-      environment: "production"
-    });
-  </script>
-
-  <!-- Plausible Analytics -->
-  <script defer data-domain="paycontrol-ivory.vercel.app" src="https://plausible.io/js/script.js"></script>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles/main.css" />
-  <link rel="stylesheet" href="styles/components.css" />
-  <link rel="stylesheet" href="styles/charts.css" />
-  <link rel="stylesheet" href="styles/responsive.css" />
-</head>
-<footer class="app-footer">
-  <nav class="footer-nav">
-    <a href="/login">Login</a>
-    <a href="/privacy">Privacy</a>
-    <a href="/terms">Terms</a>
-  </nav>
-  <p>© 2026 PayControl. All rights reserved.</p>
-</footer>
-
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="scripts/api.js"></script>
-<script src="scripts/auth.js"></script>
-<script src="scripts/state.js"></script>
-<script src="scripts/utils.js"></script>
-<script src="scripts/pages/overview.js"></script>
-<script src="scripts/pages/crypto.js"></script>
-<script src="scripts/pages/banks.js"></script>
-<script src="scripts/pages/gateways.js"></script>
-<script src="scripts/pages/allocation.js"></script>
-<script src="scripts/pages/transactions.js"></script>
-<script src="scripts/main.js"></script>
-
-</body>
-
-</html>
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  
+  <title>PayControl Dashboard</title>    <script src="https://browser.sentry-cdn.com/7.120.3/bundle.min.js" crossorigin="anonymous"></script>    <script>  
+    Sentry.init({  
+      dsn: "https://fc54230c5a76b03038c7ece8b51da049@o4511850116284416.ingest.us.sentry.io/4511861086158853",  
+      tracesSampleRate: 1.0,  
+      environment: "production"  
+    });  
+  </script>    <script defer data-domain="paycontrol-ivory.vercel.app" src="https://plausible.io/js/script.js"></script>    <link rel="stylesheet" href="styles/main.css" />  
+  <link rel="stylesheet" href="styles/components.css" />  
+  <link rel="stylesheet" href="styles/charts.css" />  
+  <link rel="stylesheet" href="styles/responsive.css" />  
+</head>  
+<body data-page="dashboard">    <main id="app">  
+    <h1>PayControl Dashboard</h1>  
+  </main>    <footer class="app-footer">  
+    <nav class="footer-nav">  
+      <a href="login.html">Login</a>  
+      <a href="privacy.html">Privacy</a>  
+      <a href="terms.html">Terms</a>  
+    </nav>  
+    <p>© 2026 PayControl. All rights reserved.</p>  
+  </footer>    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>    <script src="scripts/api.js"></script>    <script src="scripts/auth.js"></script>    <script src="scripts/state.js"></script>    <script src="scripts/utils.js"></script>    <script src="scripts/pages/overview.js"></script>    <script src="scripts/pages/crypto.js"></script>    <script src="scripts/pages/banks.js"></script>    <script src="scripts/pages/gateways.js"></script>    <script src="scripts/pages/allocation.js"></script>    <script src="scripts/pages/transactions.js"></script>    <script src="scripts/main.js"></script>  </body>  
+</html> 
