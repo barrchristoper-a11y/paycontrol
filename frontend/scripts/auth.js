@@ -37,7 +37,7 @@ async function logout() {
     // Clear session storage
     sessionStorage.removeItem('user');
     // Redirect to login (cookies are automatically cleared by server)
-    window.location.href = '/login';
+    window.location.href = '/login.html';
   }
 }
 
@@ -52,8 +52,8 @@ async function checkAuth() {
 
     if (response.status === 401) {
       // Token expired or invalid
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (window.location.pathname !== '/login.html') {
+        window.location.href = '/login.html';
       }
       return false;
     }
