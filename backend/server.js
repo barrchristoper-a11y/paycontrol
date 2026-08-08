@@ -1,193 +1,178 @@
 require('dotenv').config();
 
+console.log('🚀 Starting PayControl API...');
+console.log('📍 Node version:', process.version);
+console.log('📍 NODE_ENV:', process.env.NODE_ENV);
+console.log('📍 PORT:', process.env.PORT);
+
+// ========================================
+// Process-level error logging
+// ========================================
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('❌ Reason:', reason);
+  if (reason && reason.stack) {
+    console.error(reason.stack);
+  }
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error.message);
+  console.error(error.stack);
+  process.exit(1);
+});
+
+process.on('warning', (warning) => {
+  console.warn('⚠️ Process warning:', warning.name);
+  console.warn(warning.message);
+  console.warn(warning.stack);
+});
+
 // ========================================
 // CRITICAL: Validate required environment variables
 // ========================================
 const requiredEnvVars = [
-    'DATABASE_URL',
-    'JWT_SECRET',
-    'JWT_REFRESH_SECRET',
-    'NODE_ENV',
-    'PORT',
-    'FRONTEND_URL'
+  'DATABASE_URL',
+  'JWT_SECRET',
+  'JWT_REFRESH_SECRET',
+  'NODE_ENV',
+  'PORT',
+  'FRONTEND_URL'
 ];
 
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
-    console.error('❌ FATAL: Missing required environment variables:');
-    missingEnvVars.forEach(envVar => console.error(`   - ${envVar}`));
-    console.error('\n📖 Please copy .env.example to .env and fill in all values.');
-    process.exit(1);
+  console.error('❌ FATAL: Missing required environment variables:');
+  missingEnvVars.forEach((envVar) => console.error(`   - ${envVar}`));
+  process.exit(1);
 }
 
 console.log('✅ All required environment variables present');
 
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const compression = require('compression');
-const cookieParser = require('cookie-parser');
+try {
+  console.log('📦 Loading dependencies...');
+  const express = require('express');
+  const cors = require('cors');
+  const helmet = require('helmet');
+  const morgan = require('morgan');
+  const compression = require('compression');
+  const cookieParser = require('cookie-parser');
 
-const { setSecurityHeaders, apiLimiter } = require('./middlewares/security');
-const { errorHandler } = require('./middlewares/error');
-const { csrfProtection } = require('./middlewares/csrf');
+  console.log('📦 Loading local modules...');
+  const { setSecurityHeaders, apiLimiter } = require('./middlewares/security');
+  const { errorHandler } = require('./middlewares/error');
+  const { csrfProtection } = require('./middlewares/csrf');
 
-const authRoutes = require('./routes/auth');
-const cryptoRoutes = require('./routes/crypto');
-const bankRoutes = require('./routes/banks');
-const gatewayRoutes = require('./routes/gateways');
-const allocationRoutes = require('./routes/allocation');
-const transactionRoutes = require('./routes/transactions');
-const overviewRoutes = require('./routes/overview');
+  const authRoutes = require('./routes/auth');
+  const cryptoRoutes = require('./routes/crypto');
+  const bankRoutes = require('./routes/banks');
+  const gatewayRoutes = require('./routes/gateways');
+  const allocationRoutes = require('./routes/allocation');
+  const transactionRoutes = require('./routes/transactions');
+  const overviewRoutes = require('./routes/overview');
 
-const app = express();
+  console.log('✅ All modules loaded successfully');
 
-// ========================================
-// Trust proxy headers (Render/Vercel/Cloudflare)
-// ========================================
-app.set('trust proxy', 2);
+  const app = express();
 
-// ========================================
-// Root status endpoint
-// ========================================
-app.get("/", (req, res) => {
+  app.set('trust proxy', 2);
+
+  app.get('/', (req, res) => {
     res.json({
-        service: "PayControl API",
-        status: "running",
-        version: "1.0.0"
+      service: 'PayControl API',
+      status: 'running',
+      version: '1.0.0'
     });
-});
+  });
 
-// ========================================
-// Security Middleware
-// ========================================
-setSecurityHeaders(app);
-app.use(helmet());
+  console.log('🔐 Applying security middleware...');
+  setSecurityHeaders(app);
+  app.use(helmet());
 
-// ========================================
-// HTTPS Enforcement
-// ========================================
-if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production') {
+    console.log('🌐 Enabling production HTTPS enforcement...');
     app.use((req, res, next) => {
+      try {
         if (req.header('x-forwarded-proto') !== 'https') {
-            return res.redirect(
-                301,
-                `https://${req.header('host')}${req.originalUrl}`
-            );
+          return res.redirect(
+            301,
+            `https://${req.header('host')}${req.originalUrl}`
+          );
         }
         next();
+      } catch (err) {
+        console.error('❌ HTTPS enforcement middleware failed:', err);
+        next(err);
+      }
     });
 
     app.use((req, res, next) => {
-        res.setHeader(
-            'Strict-Transport-Security',
-            'max-age=31536000; includeSubDomains; preload'
-        );
-        next();
+      res.setHeader(
+        'Strict-Transport-Security',
+        'max-age=31536000; includeSubDomains; preload'
+      );
+      next();
     });
-}
+  }
 
-// ========================================
-// CORS
-// ========================================
-app.use(cors({
+  console.log('🌍 Configuring CORS...');
+  console.log('🌍 FRONTEND_URL:', process.env.FRONTEND_URL);
+
+  app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
-}));
+  }));
 
-// ========================================
-// Core Middleware
-// ========================================
-app.use(apiLimiter);
-app.use(compression());
-app.use(cookieParser());
+  console.log('🧩 Applying core middleware...');
+  app.use(apiLimiter);
+  app.use(compression());
+  app.use(cookieParser());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+  console.log('📝 Enabling request logging...');
+  app.use(morgan('combined'));
 
-// ========================================
-// Logging
-// ========================================
-app.use(morgan('combined'));
+  console.log('🛡️ Applying CSRF protection...');
+  app.use(csrfProtection);
 
-// ========================================
-// CSRF Protection
-// ========================================
-app.use(csrfProtection);
+  console.log('🛣️ Registering routes...');
+  app.use('/api/auth', authRoutes);
+  app.use('/api/crypto', cryptoRoutes);
+  app.use('/api/banks', bankRoutes);
+  app.use('/api/gateways', gatewayRoutes);
+  app.use('/api/allocation', allocationRoutes);
+  app.use('/api/transactions', transactionRoutes);
+  app.use('/api/overview', overviewRoutes);
 
-// ========================================
-// API Routes
-// ========================================
-app.use('/api/auth', authRoutes);
-app.use('/api/crypto', cryptoRoutes);
-app.use('/api/banks', bankRoutes);
-app.use('/api/gateways', gatewayRoutes);
-app.use('/api/allocation', allocationRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/overview', overviewRoutes);
-
-// ========================================
-// Health Check
-// ========================================
-app.get('/api/health', (req, res) => {
+  app.get('/api/health', (req, res) => {
     res.json({
-        status: 'OK',
-        timestamp: new Date().toISOString()
+      status: 'OK',
+      timestamp: new Date().toISOString()
     });
-});
+  });
 
-// ========================================
-// 404 Handler
-// ========================================
-app.use((req, res) => {
+  app.use((req, res) => {
     res.status(404).json({
-        error: 'Not Found'
+      error: 'Not Found'
     });
-});
+  });
 
-// ========================================
-// Global Error Handler
-// ========================================
-app.use(errorHandler);
+  app.use(errorHandler);
 
-// ========================================
-// Server Start
-// ========================================
-const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3000;
 
-const server = app.listen(PORT, () => {
+  console.log('🚀 Starting HTTP server...');
+  const server = app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
-});
+  });
 
-// ========================================
-// Graceful Shutdown
-// ========================================
-const gracefulShutdown = (signal) => {
-    console.log(`\n📍 ${signal} received. Starting graceful shutdown...`);
-
-    server.close(() => {
-        console.log('✅ Server closed');
-        process.exit(0);
-    });
-
-    setTimeout(() => {
-        console.error('❌ Forced shutdown: Graceful shutdown timeout');
-        process.exit(1);
-    }, 10000);
-};
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-process.on('uncaughtException', (error) => {
-    console.error('❌ Uncaught Exception:', error);
+  server.on('error', (err) => {
+    console.error('❌ Server failed to start:', err.message);
+    console.error(err.stack);
     process.exit(1);
-});
+  });
 
-module.exports = app;
+  const gracefulShutdown = (signal) => {
+    console.log(`📍 ${signal} received. Star
