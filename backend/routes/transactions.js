@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const db = require('../config/db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate } = require('../middlewares/auth');
 const logger = require('../config/logger');
 
 
