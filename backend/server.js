@@ -95,6 +95,7 @@ try {
   const allocationRoutes = require('./routes/allocation');
   const transactionRoutes = require('./routes/transactions');
   const overviewRoutes = require('./routes/overview');
+  const adminRoutes = require('./routes/admin');
 
   console.log('✅ All modules loaded successfully');
 
@@ -210,6 +211,7 @@ try {
   app.use('/api/allocation', allocationRoutes);
   app.use('/api/transactions', transactionRoutes);
   app.use('/api/overview', overviewRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // ========================================
   // Health check
