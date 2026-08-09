@@ -3,7 +3,7 @@ const router = express.Router();
 
 const db = require('../config/db');
 const { authenticate } = require('../middlewares/auth');
-const logger = require('../config/logger');
+const logger = require('../logger');
 
 
 // GET /api/transactions
