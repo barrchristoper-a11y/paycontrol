@@ -113,3 +113,5 @@ $(document).ready(function () {
         }
       }
     });
+  }
+});
