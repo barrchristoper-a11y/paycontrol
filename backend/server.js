@@ -11,10 +11,7 @@ console.log('📍 PORT:', process.env.PORT);
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise);
   console.error('❌ Reason:', reason);
-
-  if (reason && reason.stack) {
-    console.error(reason.stack);
-  }
+  if (reason && reason.stack) console.error(reason.stack);
 });
 
 process.on('uncaughtException', (error) => {
@@ -41,20 +38,12 @@ const requiredEnvVars = [
   'FRONTEND_URL'
 ];
 
-const missingEnvVars = requiredEnvVars.filter(
-  (envVar) => !process.env[envVar]
-);
-
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 if (missingEnvVars.length > 0) {
   console.error('❌ FATAL: Missing required environment variables:');
-
-  missingEnvVars.forEach((envVar) => {
-    console.error(`   - ${envVar}`);
-  });
-
+  missingEnvVars.forEach(envVar => console.error(`   - ${envVar}`));
   process.exit(1);
 }
-
 console.log('✅ All required environment variables present');
 
 try {
@@ -62,32 +51,21 @@ try {
   // Dependencies
   // ========================================
   console.log('📦 Loading dependencies...');
-
   const express = require('express');
   const cors = require('cors');
   const helmet = require('helmet');
   const morgan = require('morgan');
   const compression = require('compression');
   const cookieParser = require('cookie-parser');
+  const csrf = require('csurf');
+  const { generateToken } = require('./middlewares/csrf');
 
   // ========================================
   // Local modules
   // ========================================
   console.log('📦 Loading local modules...');
-
-  const {
-    setSecurityHeaders,
-    apiLimiter
-  } = require('./middlewares/security');
-
-  const {
-    errorHandler
-  } = require('./middlewares/error');
-
-  const {
-    csrfProtection
-  } = require('./middlewares/csrf');
-
+  const { setSecurityHeaders, apiLimiter } = require('./middlewares/security');
+  const { errorHandler } = require('./middlewares/error');
   const authRoutes = require('./routes/auth');
   const cryptoRoutes = require('./routes/crypto');
   const bankRoutes = require('./routes/banks');
@@ -103,25 +81,19 @@ try {
   // Express application
   // ========================================
   const app = express();
-
   app.set('trust proxy', 2);
 
   // ========================================
   // Root endpoint
   // ========================================
   app.get('/', (req, res) => {
-    res.json({
-      service: 'PayControl API',
-      status: 'running',
-      version: '1.0.0'
-    });
+    res.json({ service: 'PayControl API', status: 'running', version: '1.0.0' });
   });
 
   // ========================================
   // Security middleware
   // ========================================
   console.log('🔐 Applying security middleware...');
-
   setSecurityHeaders(app);
   app.use(helmet());
 
@@ -130,33 +102,14 @@ try {
   // ========================================
   if (process.env.NODE_ENV === 'production') {
     console.log('🌐 Enabling production HTTPS enforcement...');
-
     app.use((req, res, next) => {
-      try {
-        if (req.header('x-forwarded-proto') !== 'https') {
-          return res.redirect(
-            301,
-            `https://${req.header('host')}${req.originalUrl}`
-          );
-        }
-
-        next();
-      } catch (err) {
-        console.error(
-          '❌ HTTPS enforcement middleware failed:',
-          err
-        );
-
-        next(err);
+      if (req.header('x-forwarded-proto') !== 'https') {
+        return res.redirect(301, `https://${req.header('host')}${req.originalUrl}`);
       }
+      next();
     });
-
     app.use((req, res, next) => {
-      res.setHeader(
-        'Strict-Transport-Security',
-        'max-age=31536000; includeSubDomains; preload'
-      );
-
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
       next();
     });
   }
@@ -166,19 +119,15 @@ try {
   // ========================================
   console.log('🌍 Configuring CORS...');
   console.log('🌍 FRONTEND_URL:', process.env.FRONTEND_URL);
-
-  app.use(
-    cors({
-      origin: process.env.FRONTEND_URL,
-      credentials: true
-    })
-  );
+  app.use(cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true
+  }));
 
   // ========================================
   // Core middleware
   // ========================================
   console.log('🧩 Applying core middleware...');
-
   app.use(apiLimiter);
   app.use(compression());
   app.use(cookieParser());
@@ -186,24 +135,49 @@ try {
   app.use(express.urlencoded({ extended: true }));
 
   // ========================================
+  // CSRF Protection - Configured for cross-site cookies
+  // ========================================
+  console.log('🛡️ Applying CSRF protection...');
+  const csrfProtection = csrf({
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',  // ✅ FIX: Allows cross-site cookies
+      maxAge: 86400,     // 24 hours
+      path: '/'
+    }
+  });
+
+  // ✅ NEW: CSRF Token Endpoint (MUST be before csrfProtection)
+  app.get('/api/csrf-token', (req, res) => {
+    // Generate and send CSRF token
+    const token = generateToken(); // Or use req.csrfToken() if using csurf
+    res.cookie('csrfToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 86400
+    });
+    res.json({ csrfToken: token });
+  });
+
+  // Apply CSRF protection to all routes EXCEPT /api/csrf-token
+  app.use((req, res, next) => {
+    // Skip CSRF for /api/csrf-token
+    if (req.path === '/api/csrf-token') return next();
+    csrfProtection(req, res, next);
+  });
+
+  // ========================================
   // Request logging
   // ========================================
   console.log('📝 Enabling request logging...');
-
   app.use(morgan('combined'));
-
-  // ========================================
-  // CSRF protection
-  // ========================================
-  console.log('🛡️ Applying CSRF protection...');
-
-  app.use(csrfProtection);
 
   // ========================================
   // Routes
   // ========================================
   console.log('🛣️ Registering routes...');
-
   app.use('/api/auth', authRoutes);
   app.use('/api/crypto', cryptoRoutes);
   app.use('/api/banks', bankRoutes);
@@ -217,19 +191,14 @@ try {
   // Health check
   // ========================================
   app.get('/api/health', (req, res) => {
-    res.json({
-      status: 'OK',
-      timestamp: new Date().toISOString()
-    });
+    res.json({ status: 'OK', timestamp: new Date().toISOString() });
   });
 
   // ========================================
   // 404 handler
   // ========================================
   app.use((req, res) => {
-    res.status(404).json({
-      error: 'Not Found'
-    });
+    res.status(404).json({ error: 'Not Found' });
   });
 
   // ========================================
@@ -241,19 +210,13 @@ try {
   // HTTP server
   // ========================================
   const PORT = process.env.PORT || 3000;
-
   console.log('🚀 Starting HTTP server...');
-
   const server = app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
   });
 
   server.on('error', (err) => {
-    console.error(
-      '❌ Server failed to start:',
-      err.message
-    );
-
+    console.error('❌ Server failed to start:', err.message);
     console.error(err.stack);
     process.exit(1);
   });
@@ -263,39 +226,21 @@ try {
   // ========================================
   const gracefulShutdown = (signal) => {
     console.log(`📍 ${signal} received. Starting graceful shutdown...`);
-
     server.close((err) => {
       if (err) {
-        console.error(
-          '❌ Error during server shutdown:',
-          err
-        );
-
+        console.error('❌ Error during server shutdown:', err);
         process.exit(1);
       }
-
       console.log('✅ HTTP server closed successfully.');
       process.exit(0);
     });
-
-    // Force shutdown if connections do not close
-    // within 10 seconds.
     setTimeout(() => {
-      console.error(
-        '❌ Graceful shutdown timed out. Forcing exit.'
-      );
-
+      console.error('❌ Graceful shutdown timed out. Forcing exit.');
       process.exit(1);
     }, 10000).unref();
   };
-
-  process.on('SIGTERM', () => {
-    gracefulShutdown('SIGTERM');
-  });
-
-  process.on('SIGINT', () => {
-    gracefulShutdown('SIGINT');
-  });
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 } catch (error) {
   console.error('❌ FATAL: Failed to start PayControl API.');
