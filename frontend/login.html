@@ -4,11 +4,196 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PayControl Login</title>
-  <link rel="stylesheet" href="styles/main.css" />
-  <link rel="stylesheet" href="styles/components.css" />
+  <title>PayControl — Sign In</title>
   <style>
-    /* Add loading spinner */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f8f9fa;
+    }
+
+    /* Left: Brand Panel */
+    .brand-panel {
+      flex: 1.1;
+      background: linear-gradient(160deg, #e8f2fb 0%, #cfe4f5 45%, #9ec3e0 100%);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 60px;
+      overflow: hidden;
+    }
+
+    .brand-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.6), transparent 60%);
+    }
+
+    .brand-panel h1 {
+      color: #0b1f3a;
+      font-size: 2.2rem;
+      font-weight: 700;
+      z-index: 1;
+      max-width: 400px;
+      line-height: 1.3;
+    }
+
+    .brand-panel p {
+      color: #274a6d;
+      margin-top: 12px;
+      max-width: 400px;
+      line-height: 1.6;
+      z-index: 1;
+    }
+
+    /* Right: Login Form */
+    .form-panel {
+      flex: 1;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .form-wrap {
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .logo-mark {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1a4d7a, #4aa3d8);
+      border-radius: 10px;
+      position: relative;
+    }
+
+    .logo-mark::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      background: #fff;
+      border-radius: 6px;
+    }
+
+    .logo-text {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #0b1f3a;
+    }
+
+    .logo-text span {
+      color: #3a8ec7;
+    }
+
+    .form-wrap h2 {
+      font-size: 1.5rem;
+      color: #0b1f3a;
+      margin-bottom: 6px;
+    }
+
+    .form-wrap .subtitle {
+      color: #6b7c93;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #3a4a5e;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #dce4ec;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      margin-bottom: 18px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: #3a8ec7;
+      box-shadow: 0 0 0 3px rgba(58, 142, 199, 0.15);
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .row a {
+      font-size: 0.85rem;
+      color: #3a8ec7;
+      text-decoration: none;
+    }
+
+    .row a:hover {
+      text-decoration: underline;
+    }
+
+    button.submit {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #0b1f3a, #1a4d7a);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button.submit:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    button.submit:active {
+      transform: translateY(0);
+    }
+
+    .legal-link {
+      text-align: center;
+      margin-top: 28px;
+      font-size: 0.8rem;
+      color: #9aa8ba;
+    }
+
+    .legal-link a {
+      color: #3a8ec7;
+      text-decoration: none;
+    }
+
+    .legal-link a:hover {
+      text-decoration: underline;
+    }
+
     .spinner {
       display: none;
       width: 20px;
@@ -25,52 +210,82 @@
         transform: rotate(360deg);
       }
     }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .brand-panel {
+        padding: 40px 20px;
+        min-height: 200px;
+      }
+
+      .form-panel {
+        padding: 20px;
+      }
+
+      .brand-panel h1 {
+        font-size: 1.5rem;
+      }
+    }
   </style>
 </head>
 
-<body data-page="login">
-  <main class="login-shell">
-    <section class="login-card">
-      <h1>Sign in to PayControl</h1>
-      <form id="loginForm" class="form-stack">
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required />
+<body>
+  <div class="brand-panel">
+    <h1>Payments & Financial Security, unified.</h1>
+    <p>Centralized control over every gateway, every transaction, every compliance flag — in one platform.</p>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-wrap">
+      <div class="logo">
+        <div class="logo-mark"></div>
+        <div class="logo-text">Pay<span>Control</span></div>
+      </div>
+
+      <h2>Welcome back</h2>
+      <p class="subtitle">Sign in to your PayControl dashboard</p>
+
+      <form id="loginForm">
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" required autofocus placeholder="you@company.com">
 
         <label for="password">Password</label>
-        <input id="password" name="password" type="password" required minlength="8" />
+        <input id="password" name="password" type="password" required minlength="8" placeholder="••••••••">
 
-        <button type="submit" class="btn btn-primary">
-          <span id="button-text">Sign in</span>
+        <button type="submit" class="submit">
+          <span id="button-text">Sign In</span>
           <div id="button-spinner" class="spinner"></div>
         </button>
       </form>
-      <p class="legal-link"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms</a></p>
-    </section>
-  </main>
+
+      <p class="legal-link">
+        <a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a>
+      </p>
+    </div>
+  </div>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="scripts/api.js"></script>
-  <script src="scripts/main.js"></script>
-
-  <!-- ✅ NEW: CSRF Handling -->
   <script>
     $(document).ready(function () {
-      // ✅ Step 1: Get CSRF token first
+      // ✅ Fetch CSRF token first
       async function getCsrfToken() {
         try {
           const response = await fetch('https://paycontrol-backend.onrender.com/api/csrf-token', {
             credentials: 'include'
           });
           if (!response.ok) throw new Error('Failed to get CSRF token');
-          const { csrfToken } = await response.json();
-          return csrfToken;
+          return (await response.json()).csrfToken;
         } catch (error) {
           console.error('CSRF token error:', error);
           return null;
         }
       }
 
-      // ✅ Step 2: Handle login with CSRF
+      // ✅ Handle login with CSRF
       $('#loginForm').on('submit', async function (e) {
         e.preventDefault();
         const email = $('#email').val();
@@ -90,7 +305,7 @@
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken  // ✅ Send CSRF token
+              'X-CSRF-Token': csrfToken
             },
             body: JSON.stringify({ email, password }),
             credentials: 'include'

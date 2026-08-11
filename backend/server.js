@@ -58,7 +58,6 @@ try {
   const compression = require('compression');
   const cookieParser = require('cookie-parser');
   const csrf = require('csurf');
-  const { generateToken } = require('./middlewares/csrf');
 
   // ========================================
   // Local modules
@@ -87,7 +86,11 @@ try {
   // Root endpoint
   // ========================================
   app.get('/', (req, res) => {
-    res.json({ service: 'PayControl API', status: 'running', version: '1.0.0' });
+    res.json({
+      service: 'PayControl API',
+      status: 'running',
+      version: '1.0.0'
+    });
   });
 
   // ========================================
@@ -104,12 +107,18 @@ try {
     console.log('🌐 Enabling production HTTPS enforcement...');
     app.use((req, res, next) => {
       if (req.header('x-forwarded-proto') !== 'https') {
-        return res.redirect(301, `https://${req.header('host')}${req.originalUrl}`);
+        return res.redirect(
+          301,
+          `https://${req.header('host')}${req.originalUrl}`
+        );
       }
       next();
     });
     app.use((req, res, next) => {
-      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+      res.setHeader(
+        'Strict-Transport-Security',
+        'max-age=31536000; includeSubDomains; preload'
+      );
       next();
     });
   }
@@ -143,27 +152,18 @@ try {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'none',  // ✅ FIX: Allows cross-site cookies
-      maxAge: 86400,     // 24 hours
+      maxAge: 86400,
       path: '/'
     }
   });
 
-  // ✅ NEW: CSRF Token Endpoint (MUST be before csrfProtection)
-  app.get('/api/csrf-token', (req, res) => {
-    // Generate and send CSRF token
-    const token = generateToken(); // Or use req.csrfToken() if using csurf
-    res.cookie('csrfToken', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      maxAge: 86400
-    });
-    res.json({ csrfToken: token });
+  // ✅ FIXED: CSRF Token Endpoint (before csrfProtection)
+  app.get('/api/csrf-token', csrfProtection, (req, res) => {
+    res.json({ csrfToken: req.csrfToken() }); // ✅ Use req.csrfToken() instead of generateToken
   });
 
   // Apply CSRF protection to all routes EXCEPT /api/csrf-token
   app.use((req, res, next) => {
-    // Skip CSRF for /api/csrf-token
     if (req.path === '/api/csrf-token') return next();
     csrfProtection(req, res, next);
   });
@@ -191,14 +191,19 @@ try {
   // Health check
   // ========================================
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString()
+    });
   });
 
   // ========================================
   // 404 handler
   // ========================================
   app.use((req, res) => {
-    res.status(404).json({ error: 'Not Found' });
+    res.status(404).json({
+      error: 'Not Found'
+    });
   });
 
   // ========================================
