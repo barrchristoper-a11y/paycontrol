@@ -147,26 +147,30 @@ try {
   // CSRF Protection - Configured for cross-site cookies
   // ========================================
   console.log('🛡️ Applying CSRF protection...');
+
+  // ✅ FIX: Create CSRF protection WITHOUT applying it yet
   const csrfProtection = csrf({
     cookie: {
       httpOnly: true,
-      secure: true,               // ✅ Always true (HTTPS required)
-      sameSite: 'none',          // ✅ Allows cross-site
-      partitioned: true,         // ✅ NEW: Required for Chrome 115+
+      secure: true,
+      sameSite: 'none',
+      partitioned: true,
       maxAge: 86400,
       path: '/'
     }
   });
 
-  // ✅ FIXED: CSRF Token Endpoint (before csrfProtection)
-  app.get('/api/csrf-token', csrfProtection, (req, res) => {
-    res.json({ csrfToken: req.csrfToken() }); // ✅ Use req.csrfToken() instead of generateToken
+  // ✅ FIX: CSRF Token Endpoint (NO csrfProtection here)
+  app.get('/api/csrf-token', (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
   });
 
-  // Apply CSRF protection to all routes EXCEPT /api/csrf-token
+  // ✅ FIX: Apply CSRF protection to ALL routes EXCEPT /api/csrf-token
   app.use((req, res, next) => {
-    if (req.path === '/api/csrf-token') return next();
-    csrfProtection(req, res, next);
+    if (req.path === '/api/csrf-token') {
+      return next(); // Skip CSRF for token endpoint
+    }
+    csrfProtection(req, res, next); // Apply CSRF to everything else
   });
 
   // ========================================
