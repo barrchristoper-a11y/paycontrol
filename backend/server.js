@@ -150,8 +150,9 @@ try {
   const csrfProtection = csrf({
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',  // ✅ FIX: Allows cross-site cookies
+      secure: true,               // ✅ Always true (HTTPS required)
+      sameSite: 'none',          // ✅ Allows cross-site
+      partitioned: true,         // ✅ NEW: Required for Chrome 115+
       maxAge: 86400,
       path: '/'
     }
