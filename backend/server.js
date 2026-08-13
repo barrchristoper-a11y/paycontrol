@@ -148,29 +148,23 @@ try {
   // ========================================
   console.log('🛡️ Applying CSRF protection...');
 
-  // ✅ FIX: Create CSRF protection WITHOUT applying it yet
   const csrfProtection = csrf({
     cookie: {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
-      partitioned: true,
+      partitioned: true,  // ✅ Required for Chrome 115+
       maxAge: 86400,
       path: '/'
     }
   });
 
-  // ✅ FIX: CSRF Token Endpoint (NO csrfProtection here)
+  // ✅ FIX: Apply CSRF middleware to ALL routes FIRST
+  app.use(csrfProtection);
+
+  // ✅ NOW the token endpoint works (req.csrfToken() is available)
   app.get('/api/csrf-token', (req, res) => {
     res.json({ csrfToken: req.csrfToken() });
-  });
-
-  // ✅ FIX: Apply CSRF protection to ALL routes EXCEPT /api/csrf-token
-  app.use((req, res, next) => {
-    if (req.path === '/api/csrf-token') {
-      return next(); // Skip CSRF for token endpoint
-    }
-    csrfProtection(req, res, next); // Apply CSRF to everything else
   });
 
   // ========================================
