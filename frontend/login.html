@@ -317,7 +317,7 @@
             return;
           }
 
-          window.location.href = '/dashboard.html';
+          window.location.href = '/';  // ✅ Redirects to home
         } catch (error) {
           alert(`Login error: ${error.message}`);
           console.error('Login error:', error);
